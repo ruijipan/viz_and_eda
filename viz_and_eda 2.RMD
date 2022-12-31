@@ -1,0 +1,215 @@
+---
+title: "viviz_and_eda"
+output: html_document
+date: "2022-12-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggridges)
+```
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USC00519397", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(
+      id, 
+      USW00094728 = "CentralPark_NY", 
+      USC00519397 = "Waikiki_HA",
+      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything()) %>%
+  drop_na()
+weather_df
+
+```
+
+```{r}
+weather_df %>%
+  drop_na() %>%
+  ggplot(aes(x = date, y = tmax, color = name, size = prcp)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(se = FALSE) +
+  facet_grid(.~name)
+
+
+```
+
+
+
+```{r}
+weather_df %>%
+  filter(name == "CentralPark_NY") %>%
+  mutate(fmax = tmax * 1.8 + 32, fmin = tmin * 1.8 + 32) %>%
+  select(name, id, date, prcp, fmax, fmin) %>%
+  ggplot(aes(x = fmin, y = fmax)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(se = FALSE)
+  
+
+
+```
+
+
+
+
+```{r}
+weather_df %>%
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_smooth(se = FALSE)
+
+
+```
+
+
+
+```{r}
+weather_df %>%
+  ggplot(aes(x = tmax, y = tmin)) +
+  geom_hex()
+
+
+```
+
+
+
+```{r}
+ggplot(weather_df) + geom_point(aes(x = tmax, y = tmin), color = "blue")
+ggplot(weather_df) + geom_point(aes(x = tmax, y = tmin, color = "blue"))
+
+
+```
+
+
+
+```{r}
+weather_df %>%
+  ggplot(aes(x = tmax, fill = name))+
+  geom_histogram(position = "dodge", binwidth = 2)
+
+
+```
+
+
+
+```{r}
+weather_df %>%
+  ggplot(aes(x = tmax, fill = name)) +
+  geom_density(alpha = 0.4, adjust = 0.5, color = "red") 
+
+
+
+```
+
+
+```{r}
+weather_df %>%
+  ggplot(aes(x = name, y = tmax)) +
+  geom_boxplot() 
+
+
+```
+
+
+```{r}
+weather_df %>%
+  ggplot(aes(x = name, y = tmax, fill = name)) +
+  geom_violin(alpha = 0.5) +
+  stat_summary(fun = "median", color = "purple")
+
+
+
+```
+
+
+
+```{r}
+weather_df %>%
+  ggplot(aes(x = tmax, y = name)) +
+  geom_density_ridges(scale = 0.85)
+```
+
+
+
+
+
+```{r}
+weather_df %>%
+  ggplot(aes(x = prcp)) +
+  geom_histogram(aes(fill = name), alpha = 0.5) +
+  facet_grid(.~name)
+
+weather_df %>%
+  ggplot(aes(x = prcp)) +
+  geom_density(aes(fill = name), alpha = 0.5)
+
+weather_df %>%
+  ggplot(aes(x = prcp, y = name)) +
+  geom_density_ridges(scale = 0.85)
+
+weather_df %>%
+  ggplot(aes(x = name, y = prcp)) +
+  geom_boxplot()
+
+
+weather_df %>%
+  filter(prcp > 0 & prcp <100) %>%
+  ggplot(aes(x = prcp, y = name)) +
+  geom_density_ridges(scale = 0.85)
+```
+
+
+
+
+
+```{r}
+viz_plot = 
+weather_df %>%
+  filter(prcp > 0 & prcp <100) %>%
+  ggplot(aes(x = prcp, y = name)) +
+  geom_density_ridges(scale = 0.85)
+ggsave("./result/viz_plot.pdf", viz_plot)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
