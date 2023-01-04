@@ -31,3 +31,358 @@ weather_df
 
 ```
 
+
+
+##group_by()
+
+```{r}
+weather_df %>%
+  group_by(month) %>%
+  summarize(n_obs = n())
+
+
+
+```
+
+
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(n_obs = n())
+
+
+
+```
+
+
+
+
+```{r}
+weather_df %>%
+  count(name, month, name = "n_obs")
+
+
+```
+
+
+
+
+```{r, eval = FALSE}
+weather_df %>%
+  pull(month) %>%
+  table
+
+
+
+```
+
+
+```{r}
+weather_df %>%
+  group_by(month) %>%
+  summarize(n_obs = n(),
+            n_days = n_distinct(date))
+
+```
+
+
+
+```{r}
+weather_df %>%
+  mutate(
+    cold = case_when(
+      tmax < 5 ~ "cold",
+      tmax >= 5 ~ "not cold",
+      TRUE ~ ""
+    )) %>%
+  filter(name != "Waikiki_HA") %>%
+  group_by(name, cold) %>%
+  summarize(n_obs = n())
+
+
+
+
+```
+
+
+```{r}
+weather_df %>%
+  mutate(
+    cold = case_when(
+      tmax < 5 ~ "cold",
+      tmax >= 5 ~ "not cold",
+      TRUE ~ ""
+    )) %>%
+  filter(name != "Waikiki_HA") %>%
+  janitor::tabyl(name, cold)
+
+
+
+```
+
+
+```{r}
+weather_df %>%
+  mutate(
+    cold = case_when(
+      tmax < 5 ~ "cold",
+      tmax >= 5 ~ "not cold",
+      TRUE ~ ""
+    )) %>%
+  filter(name != "Waikiki_HA") %>%
+  group_by(name, cold) %>%
+  summarize(n_obs = n()) %>%
+  pivot_wider(
+    names_from = cold,
+    values_from = n_obs
+  )
+
+
+
+
+```
+
+
+
+```{r}
+weather_df %>%
+  group_by(month) %>%
+  summarize(
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    mean_prec = mean(prcp),
+    median_tmax = median(tmax),
+    sd_tmax = sd(tmax)
+  )
+
+
+
+```
+
+
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(
+    mean_tmax = mean(tmax),
+    median_tmax = median(tmax)
+  )
+```
+
+
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(across(tmin:prcp, mean)) 
+
+```
+
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(mean_tmax = mean(tmax)) %>%
+  ggplot(aes(x = month, y = mean_tmax, color = name)) +
+  geom_point()+
+  geom_line() +
+  theme(legend.position = "bottom")
+
+
+```
+
+
+
+```{r}
+weather_df %>%
+  group_by(month, name) %>%
+  summarize(mean_tmax = mean(tmax)) %>%
+  pivot_wider(
+    names_from = name,
+    values_from = mean_tmax
+  ) %>%
+  knitr::kable(digits = 1)
+
+
+
+```
+
+
+
+
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    centered_tmax = tmax - mean_tmax) %>%
+  ggplot(aes(x = date, y = centered_tmax, color = name)) +
+  geom_point() +
+  theme(legend.position = "bottom") 
+
+
+
+```
+
+
+
+
+```{r}
+weather_df %>%
+  group_by(name, month)
+
+```
+
+
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  filter(min_rank(tmax) < 4)
+
+```
+
+
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  mutate(temp_ranking = min_rank(tmax)) %>%
+  filter(min_rank(desc(tmax)) < 4)
+
+```
+
+
+
+
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(temp_change = tmax - lag(tmax))
+
+
+
+```
+
+
+
+
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(
+    temp_change = tmax - lag(tmax)) %>%
+  summarize(
+    temp_change_sd = sd(temp_change, na.rm = TRUE),
+    temp_change_max = max(temp_change, na.rm = TRUE))
+  
+
+
+
+```
+
+
+
+
+```{r}
+pulse_df = 
+  haven::read_sas("./data/public_pulse_data.sas7bdat") %>%
+  janitor::clean_names() %>%
+  pivot_longer(
+    bdi_score_bl : bdi_score_12m,
+    names_to = "obs",
+    names_prefix = "bdi_score_",
+    values_to = "bdi_score"
+  ) %>%
+  select(id, obs, everything()) %>%
+  mutate(
+obs = recode(obs, "bl" = "00m")
+  )
+
+  pulse_df %>%
+  group_by(obs) %>%
+  summarize(mean_bdi = mean(bdi_score, na.rm = TRUE),
+            median_bdi = median(bdi_score, na.rm = TRUE)) %>%
+  knitr::kable(digits = 3)
+
+
+
+
+```
+
+
+
+
+
+
+```{r}
+pups_df = read_csv("./data/FAS_pups.csv") %>%
+  janitor::clean_names() %>%
+  mutate(
+    sex = recode(sex, "1" = "male", "2" = "female")
+  )
+litters_df = read_csv("./data/FAS_litters.csv") %>%
+  janitor::clean_names() %>%
+  separate(group, into = c("dose", "day_of_trt"), sep = 3)
+  
+fas_data = left_join(pups_df, litters_df, by = "litter_number")
+
+fas_data %>%
+  group_by(dose, day_of_trt) %>%
+  summarize(mean_pivot = mean(pd_pivot, na.rm = TRUE)) %>%
+  pivot_wider(
+    names_from = dose,
+    values_from = mean_pivot
+  ) %>%
+  knitr::kable(digits = 3)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
